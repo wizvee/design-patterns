@@ -1,72 +1,84 @@
-abstract class Component {
-  protected parent!: Component | null;
-
-  public setParent(parent: Component | null) {
-    this.parent = parent;
-  }
-
-  public getParent(): Component | null {
-    return this.parent;
-  }
-
-  public add(component: Component): void {}
-  public remove(component: Component): void {}
-
-  public isComposite(): boolean {
-    return false;
-  }
-
-  public abstract operation(): string;
+interface Graphic {
+  move(x: number, y: number): string;
+  draw(): string;
 }
 
-class Leaf extends Component {
-  public operation(): string {
-    return "Leaf";
+class Dot implements Graphic {
+  x: number;
+  y: number;
+
+  constructor(x: number, y: number) {
+    this.x = x;
+    this.y = y;
+  }
+
+  public move(x: number, y: number): string {
+    this.x += x;
+    this.y += y;
+    return `점을 (${this.x}, ${this.y}) 좌표로 이동...`;
+  }
+
+  public draw(): string {
+    return `점을 (${this.x}, ${this.y}) 좌표에 그림...`;
   }
 }
 
-class Composite extends Component {
-  protected children: Component[] = [];
+class Circle extends Dot {
+  radius: number;
 
-  public add(component: Component): void {
-    this.children.push(component);
-    component.setParent(this);
+  constructor(x: number, y: number, radius: number) {
+    super(x, y);
+    this.radius = radius;
   }
 
-  public remove(component: Component): void {
-    const index = this.children.indexOf(component);
+  public draw(): string {
+    return `반지름 ${this.radius}인 원을 (${this.x}, ${this.y}) 좌표에 그림...`;
+  }
+}
+
+class CompoundGraphic implements Graphic {
+  children: Graphic[] = [];
+
+  public add(child: Graphic): void {
+    this.children.push(child);
+  }
+
+  public remove(child: Graphic): void {
+    const index = this.children.indexOf(child);
     this.children.splice(index, 1);
-
-    component.setParent(null);
   }
 
-  public isComposite(): boolean {
-    return true;
+  public move(x: number, y: number): string {
+    return this.children.map((child) => child.move(x, y)).join("\n");
   }
 
-  public operation(): string {
-    const results = this.children.map((child) => child.operation()).join(" + ");
-    return `Branch(${results})`;
+  public draw(): string {
+    return this.children.map((child) => child.draw()).join("\n");
   }
 }
 
-function clientCode(component: Component) {
-  console.log(`Result: ${component.operation()}`);
+class ImageEditor {
+  all: CompoundGraphic;
+
+  public load(): void {
+    this.all = new CompoundGraphic();
+    this.all.add(new Dot(1, 2));
+    this.all.add(new Circle(5, 3, 10));
+  }
+
+  public groupSelected(components: Graphic[]): void {
+    const group = new CompoundGraphic();
+    components.forEach((component) => {
+      group.add(component);
+      this.all.remove(component);
+    });
+    this.all.add(group);
+
+    const draw = this.all.draw();
+    console.log(draw);
+  }
 }
 
-const simple = new Leaf();
-console.log("Client: I've got a simple component:");
-clientCode(simple);
-console.log("");
-
-const tree = new Composite();
-const branch1 = new Composite();
-branch1.add(new Leaf());
-branch1.add(new Leaf());
-const branch2 = new Composite();
-branch2.add(new Leaf());
-tree.add(branch1);
-tree.add(branch2);
-console.log("Client: Now I've got a composite tree:");
-clientCode(tree);
-console.log("");
+const editor = new ImageEditor();
+editor.load();
+editor.groupSelected([new Dot(1, 2), new Dot(5, 3), new Circle(7, 10, 3)]);
