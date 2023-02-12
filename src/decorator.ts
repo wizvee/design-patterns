@@ -1,47 +1,60 @@
-interface Component {
-  operation(): string;
-}
-
-class ConcreteComponent implements Component {
-  public operation(): string {
-    return "ConcreteComponent";
+class Notifier {
+  public send(message: string): void {
+    console.log(`Email 알림: ${message}`);
   }
 }
 
-class Decorator implements Component {
-  protected component: Component;
+class BaseDecorator implements Notifier {
+  protected wrappee: Notifier;
 
-  constructor(component: Component) {
-    this.component = component;
+  constructor(notifier: Notifier) {
+    this.wrappee = notifier;
   }
 
-  public operation(): string {
-    return this.component.operation();
-  }
-}
-
-class ConcreteDecoratorA extends Decorator {
-  public operation(): string {
-    return `ConcreteDecoratorA(${super.operation()})`;
+  public send(message: string): void {
+    this.wrappee.send(message);
   }
 }
 
-class ConcreteDecoratorB extends Decorator {
-  public operation(): string {
-    return `ConcreteDecoratorB(${super.operation()})`;
+class SMSDecorator extends BaseDecorator {
+  public send(message: string): void {
+    super.send(message);
+    console.log(`SMS 알림: ${message}`);
   }
 }
 
-function clientCode(component: Component) {
-  console.log(`RESULT: ${component.operation()}`);
+class FacebookDecorator extends BaseDecorator {
+  public send(message: string): void {
+    super.send(message);
+    console.log(`Facebook 알림: ${message}`);
+  }
 }
 
-const simple = new ConcreteComponent();
-console.log(`Client: I\'ve got a simple component:`);
-clientCode(simple);
-console.log("");
+class SlackDecorator extends BaseDecorator {
+  public send(message: string): void {
+    super.send(message);
+    console.log(`Slack 알림: ${message}`);
+  }
+}
 
-const decorator1 = new ConcreteDecoratorA(simple);
-const decorator2 = new ConcreteDecoratorB(decorator1);
-console.log(`Client: Now I/\'ve got a decorated component:`);
-clientCode(decorator2);
+class Application {
+  notifier: Notifier;
+
+  constructor() {
+    this.setNotifier();
+  }
+
+  setNotifier() {
+    let stack = new Notifier();
+    stack = new FacebookDecorator(stack);
+    stack = new SlackDecorator(stack);
+    this.notifier = stack;
+  }
+
+  public send(message: string) {
+    this.notifier.send(message);
+  }
+}
+
+const app = new Application();
+app.send("긴급한 알림 메시지를 전송합니다.");
