@@ -1,78 +1,79 @@
-class Flyweight {
-  private sharedState: any;
+class TreeType {
+  name: string;
+  color: string;
+  texture: string;
 
-  constructor(sharedState: any) {
-    this.sharedState = sharedState;
+  constructor(name: string, color: string, texture: string) {
+    this.name = name;
+    this.color = color;
+    this.texture = texture;
   }
 
-  public operation(uniqueState): void {
-    const s = JSON.stringify(this.sharedState);
-    const u = JSON.stringify(uniqueState);
-    console.log(`Flyweight: Displaying shared (${s}) and unique (${u}) state.`);
-  }
-}
-
-class FlyweightFactory {
-  private flyweights: { [key: string]: Flyweight } = <any>{};
-
-  constructor(initialFlyweights: string[][]) {
-    for (const state of initialFlyweights) {
-      this.flyweights[this.getKey(state)] = new Flyweight(state);
-    }
+  public draw(x: number, y: number): void {
+    console.log(
+      `좌표 (${x}, ${y})에 ${this.color} ${this.name} ${this.texture} 그리는 중...`
+    );
   }
 
-  private getKey(state: string[]): string {
-    return state.join("_");
-  }
-
-  public getFlyweight(sharedState: string[]): Flyweight {
-    const key = this.getKey(sharedState);
-
-    if (!(key in this.flyweights)) {
-      console.log(
-        "FlyweightFactory: Can't find a flyweight, creating new one."
-      );
-      this.flyweights[key] = new Flyweight(sharedState);
-    } else {
-      console.log("FlyweightFactory: Reusing existing flyweight.");
-    }
-
-    return this.flyweights[key];
-  }
-
-  public listFlyweights(): void {
-    const count = Object.keys(this.flyweights).length;
-    console.log(`\nFlyweightFactory: I have ${count} flyweights:`);
-    for (const key in this.flyweights) {
-      console.log(key);
-    }
+  public match(name: string, color: string, texture: string): boolean {
+    return (
+      this.name === name && this.color === color && this.texture === texture
+    );
   }
 }
 
-const factory = new FlyweightFactory([
-  ["Chevrolet", "Camaro2018", "pink"],
-  ["Mercedes Benz", "C300", "black"],
-  ["Mercedes Benz", "C500", "red"],
-  ["BMW", "M5", "red"],
-  ["BMW", "X6", "white"],
-]);
-factory.listFlyweights();
+class TreeFactory {
+  static treeTypes: TreeType[] = [];
 
-function addCarToPoliceDatabase(
-  ff: FlyweightFactory,
-  plates: string,
-  owner: string,
-  brand: string,
-  model: string,
-  color: string
-) {
-  console.log("\nClient: Adding a car to database.");
-  const flyweight = ff.getFlyweight([brand, model, color]);
-
-  flyweight.operation([plates, owner]);
+  static getTreeType(name: string, color: string, texture: string): TreeType {
+    let type = this.treeTypes.find((type) => type.match(name, color, texture));
+    if (!type) {
+      type = new TreeType(name, color, texture);
+      this.treeTypes.push(type);
+    }
+    return type;
+  }
 }
 
-addCarToPoliceDatabase(factory, "CL234IR", "James Doe", "BMW", "M5", "red");
-addCarToPoliceDatabase(factory, "CL234IR", "James Doe", "BMW", "X1", "red");
+class Tree {
+  x: number;
+  y: number;
+  type: TreeType;
 
-factory.listFlyweights();
+  constructor(x: number, y: number, type: TreeType) {
+    this.x = x;
+    this.y = y;
+    this.type = type;
+  }
+
+  public draw() {
+    this.type.draw(this.x, this.y);
+  }
+}
+
+class Forest {
+  trees: Tree[] = [];
+
+  public plantTree(
+    x: number,
+    y: number,
+    name: string,
+    color: string,
+    texture: string
+  ) {
+    const type = TreeFactory.getTreeType(name, color, texture);
+    const tree = new Tree(x, y, type);
+    this.trees.push(tree);
+  }
+
+  public draw() {
+    this.trees.forEach((tree) => tree.draw());
+  }
+}
+
+const factory = new TreeFactory();
+const forest = new Forest();
+
+forest.plantTree(10, 10, "자작나무", "하얀색", "원목");
+forest.plantTree(50, 10, "흑단나무", "검은색", "원목");
+forest.draw();
