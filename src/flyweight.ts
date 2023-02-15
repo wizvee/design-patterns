@@ -26,7 +26,8 @@ class TreeFactory {
   static treeTypes: TreeType[] = [];
 
   static getTreeType(name: string, color: string, texture: string): TreeType {
-    let type = this.treeTypes.find((type) => type.match(name, color, texture));
+    const matchType = (type: TreeType) => type.match(name, color, texture)
+    let type = this.treeTypes.find(matchType);
     if (!type) {
       type = new TreeType(name, color, texture);
       this.treeTypes.push(type);
